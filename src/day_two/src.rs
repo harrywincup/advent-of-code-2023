@@ -9,8 +9,8 @@ struct Game {
 type Color = (String, u32);
 type Set = Vec<Color>;
 
-impl<'a> From<&'a str> for Game {
-    fn from(game: &'a str) -> Self {
+impl From<&str> for Game {
+    fn from(game: &str) -> Self {
         Self {
             id: parse_id(game),
             sets: parse_sets(game),
@@ -24,7 +24,7 @@ pub fn run() {
     let games: Vec<Game> = input.lines().map(Game::from).collect();
 
     println!("Part A: {:?}", sum_of_valid_game_ids(&games));
-    println!("B: {:?}", sum_of_powers(&games));
+    println!("Part B: {:?}", sum_of_powers(&games));
 }
 
 fn parse_id(game: &str) -> u32 {
@@ -80,14 +80,13 @@ fn find_minimum_set_power(game: &Game) -> u32 {
 
     game.sets
         .iter()
-        .fold(minimums, |mut acc: HashMap<&str, u32>, set| {
-            for (name, amount) in set {
-                if let Some(n) = acc.get_mut(&name.as_ref()) {
-                    if amount > n {
-                        *n = *amount;
-                    }
+        .flat_map(|set| set.iter())
+        .fold(minimums, |mut acc: HashMap<&str, u32>, (name, amount)| {
+            acc.entry(name.as_ref()).and_modify(|n| {
+                if amount > n {
+                    *n = *amount;
                 }
-            }
+            });
 
             acc
         })
