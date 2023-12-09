@@ -31,15 +31,14 @@ pub fn run() {
 }
 
 fn get_steps(node_map: &Nodes, instructions: &[char], f: &dyn Fn(&str) -> bool) -> usize {
-    let starting_nodes: Vec<&String> = node_map.keys().filter(|n| f(n)).collect();
-
     let mut directions = instructions.iter().cycle();
 
-    let steps = starting_nodes
-        .iter()
+    node_map
+        .keys()
+        .filter(|n| f(n))
         .map(|node| {
             let mut steps = 0;
-            let mut current = node_map.get_key_value(node.to_owned()).unwrap();
+            let mut current = node_map.get_key_value(&node.to_owned()).unwrap();
 
             while current.0.chars().nth(2).unwrap() != 'Z' {
                 let next: &String = match directions.next().unwrap() {
@@ -55,7 +54,5 @@ fn get_steps(node_map: &Nodes, instructions: &[char], f: &dyn Fn(&str) -> bool) 
 
             steps
         })
-        .fold(1, lcm);
-
-    steps
+        .fold(1, lcm)
 }
