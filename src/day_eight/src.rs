@@ -1,4 +1,7 @@
+use num::integer::lcm;
 use std::collections::HashMap;
+
+type Nodes = HashMap<String, (String, String)>;
 
 pub fn run() {
     let input = include_str!("./input.txt");
@@ -10,36 +13,49 @@ pub fn run() {
         .map(|l| l.chars().collect())
         .unwrap_or_default();
 
-    let nodes: HashMap<String, (String, String)> =
-        lines.skip(1).fold(HashMap::default(), |mut hash, line| {
-            let key = line.chars().take(3).collect::<String>();
-            let left = line.chars().skip(7).take(3).collect::<String>();
-            let right = line.chars().skip(12).take(3).collect::<String>();
+    let nodes: Nodes = lines.skip(1).fold(HashMap::default(), |mut hash, line| {
+        let key = line.chars().take(3).collect::<String>();
+        let left = line.chars().skip(7).take(3).collect::<String>();
+        let right = line.chars().skip(12).take(3).collect::<String>();
 
-            hash.insert(key, (left, right));
+        hash.insert(key, (left, right));
 
-            hash
-        });
+        hash
+    });
 
-    let steps = instructions
+    let steps_a = get_steps(&nodes, &instructions, &|n: &str| n == "AAA");
+    let steps_b = get_steps(&nodes, &instructions, &|n| n.ends_with('A'));
+
+    println!("A: {:?}", steps_a);
+    println!("B: {:?}", steps_b);
+}
+
+fn get_steps(node_map: &Nodes, instructions: &[char], f: &dyn Fn(&str) -> bool) -> usize {
+    let starting_nodes: Vec<&String> = node_map.keys().filter(|n| f(n)).collect();
+
+    let mut directions = instructions.iter().cycle();
+
+    let steps = starting_nodes
         .iter()
-        .cycle()
-        .scan((0, "AAA"), |(steps, node), instruction| {
-            let next_node = nodes
-                .get(&node.to_owned())
-                .map(|options| match instruction {
-                    'L' => &options.0,
-                    _ => &options.1,
-                })
-                .unwrap();
+        .map(|node| {
+            let mut steps = 0;
+            let mut current = node_map.get_key_value(node.to_owned()).unwrap();
 
-            *steps += 1;
-            *node = next_node;
+            while current.0.chars().nth(2).unwrap() != 'Z' {
+                let next: &String = match directions.next().unwrap() {
+                    'L' => &current.1 .0,
+                    'R' => &current.1 .1,
+                    _ => panic!("Invalid instruction"),
+                };
 
-            Some((*steps, *node))
+                current = node_map.get_key_value(&next.to_owned()).unwrap();
+
+                steps += 1;
+            }
+
+            steps
         })
-        .find(|(_, node)| *node == "ZZZ")
-        .unwrap();
+        .fold(1, lcm);
 
-    println!("A: {:?}", steps.0);
+    steps
 }
